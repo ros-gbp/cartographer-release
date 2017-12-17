@@ -1,0 +1,19 @@
+ros-lunar-cartographer (0.3.0-0stretch) stretch; urgency=high
+
+  https://github.com/googlecartographer/cartographer/compare/0.2.0...0.3.0
+
+ -- Mikael Arguedas <mikael@osrfoundation.org>  Wed, 22 Nov 2017 23:00:00 -0000
+
+ros-lunar-cartographer (0.2.0-0stretch) stretch; urgency=high
+
+  https://github.com/googlecartographer/cartographer/compare/0.1.0...0.2.0
+
+ -- Mikael Arguedas <mikael@osrfoundation.org>  Sun, 18 Jun 2017 22:00:00 -0000
+
+ros-lunar-cartographer (0.1.0-0stretch) stretch; urgency=high
+
+  * First unstable development release
+
+ -- Mikael Arguedas <mikael@osrfoundation.org>  Wed, 17 May 2017 22:00:00 -0000
+
+
