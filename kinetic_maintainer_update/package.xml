@@ -23,8 +23,8 @@
     and mapping (SLAM) in 2D and 3D across multiple platforms and sensor
     configurations.
   </description>
-  <maintainer email="mikael@osrfoundation.org">
-    Mikael Arguedas
+  <maintainer email="cartographer-owners@googlegroups.com">
+    The Cartographer Owners
   </maintainer>
   <license>Apache 2.0</license>
 
