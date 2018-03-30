@@ -120,7 +120,8 @@ std::vector<DiscreteScan> DiscretizeScans(
       const Eigen::Vector2f translated_point =
           Eigen::Affine2f(initial_translation) * point.head<2>();
       discrete_scans.back().push_back(
-          map_limits.GetCellIndex(translated_point));
+          map_limits.GetXYIndexOfCellContainingPoint(translated_point.x(),
+                                                     translated_point.y()));
     }
   }
   return discrete_scans;

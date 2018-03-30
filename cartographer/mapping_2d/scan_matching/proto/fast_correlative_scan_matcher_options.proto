@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+syntax = "proto2";
 
 package cartographer.mapping_2d.scan_matching.proto;
 
 message FastCorrelativeScanMatcherOptions {
   // Minimum linear search window in which the best possible scan alignment
   // will be found.
-  double linear_search_window = 3;
+  optional double linear_search_window = 3;
 
   // Minimum angular search window in which the best possible scan alignment
   // will be found.
-  double angular_search_window = 4;
+  optional double angular_search_window = 4;
 
   // Number of precomputed grids to use.
-  int32 branch_and_bound_depth = 2;
+  optional int32 branch_and_bound_depth = 2;
 }
