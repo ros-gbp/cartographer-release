@@ -471,6 +471,7 @@ class HybridGrid : public HybridGridBase<uint16> {
     CHECK_EQ(proto.values_size(), proto.x_indices_size());
     CHECK_EQ(proto.values_size(), proto.y_indices_size());
     CHECK_EQ(proto.values_size(), proto.z_indices_size());
+
     for (int i = 0; i < proto.values_size(); ++i) {
       // SetProbability does some error checking for us.
       SetProbability(Eigen::Vector3i(proto.x_indices(i), proto.y_indices(i),
@@ -484,8 +485,8 @@ class HybridGrid : public HybridGridBase<uint16> {
     *mutable_value(index) = mapping::ProbabilityToValue(probability);
   }
 
-  // Finishes the update sequence.
-  void FinishUpdate() {
+  // Starts the next update sequence.
+  void StartUpdate() {
     while (!update_indices_.empty()) {
       DCHECK_GE(*update_indices_.back(), mapping::kUpdateMarker);
       *update_indices_.back() -= mapping::kUpdateMarker;
@@ -496,7 +497,7 @@ class HybridGrid : public HybridGridBase<uint16> {
   // Applies the 'odds' specified when calling ComputeLookupTableToApplyOdds()
   // to the probability of the cell at 'index' if the cell has not already been
   // updated. Multiple updates of the same cell will be ignored until
-  // FinishUpdate() is called. Returns true if the cell was updated.
+  // StartUpdate() is called. Returns true if the cell was updated.
   //
   // If this is the first call to ApplyOdds() for the specified cell, its value
   // will be set to probability corresponding to 'odds'.
@@ -521,24 +522,22 @@ class HybridGrid : public HybridGridBase<uint16> {
   // Returns true if the probability at the specified 'index' is known.
   bool IsKnown(const Eigen::Array3i& index) const { return value(index) != 0; }
 
-  proto::HybridGrid ToProto() const {
-    CHECK(update_indices_.empty()) << "Serializing a grid during an update is "
-                                      "not supported. Finish the update first.";
-    proto::HybridGrid result;
-    result.set_resolution(resolution());
-    for (const auto it : *this) {
-      result.add_x_indices(it.first.x());
-      result.add_y_indices(it.first.y());
-      result.add_z_indices(it.first.z());
-      result.add_values(it.second);
-    }
-    return result;
-  }
-
  private:
   // Markers at changed cells.
   std::vector<ValueType*> update_indices_;
 };
+
+inline proto::HybridGrid ToProto(const HybridGrid& grid) {
+  proto::HybridGrid result;
+  result.set_resolution(grid.resolution());
+  for (const auto it : grid) {
+    result.add_x_indices(it.first.x());
+    result.add_y_indices(it.first.y());
+    result.add_z_indices(it.first.z());
+    result.add_values(it.second);
+  }
+  return result;
+}
 
 }  // namespace mapping_3d
 }  // namespace cartographer

@@ -20,14 +20,13 @@
 #include <string>
 
 #include "Eigen/Core"
+#include "cairo/cairo.h"
 #include "cartographer/common/lua_parameter_dictionary.h"
 #include "cartographer/common/make_unique.h"
 #include "cartographer/common/math.h"
-#include "cartographer/io/draw_trajectories.h"
-#include "cartographer/io/image.h"
+#include "cartographer/io/cairo_types.h"
 #include "cartographer/mapping/detect_floors.h"
 #include "cartographer/mapping_3d/hybrid_grid.h"
-#include "cartographer/transform/transform.h"
 
 namespace cartographer {
 namespace io {
@@ -35,21 +34,35 @@ namespace {
 
 struct PixelData {
   size_t num_occupied_cells_in_column = 0;
-  float mean_r = 0.;
-  float mean_g = 0.;
-  float mean_b = 0.;
+  double mean_r = 0.;
+  double mean_g = 0.;
+  double mean_b = 0.;
 };
 
 using PixelDataMatrix =
     Eigen::Matrix<PixelData, Eigen::Dynamic, Eigen::Dynamic>;
 
-float Mix(const float a, const float b, const float t) {
+double Mix(const double a, const double b, const double t) {
   return a * (1. - t) + t * b;
 }
 
-// Convert 'mat' into a pleasing-to-look-at image.
-Image IntoImage(const PixelDataMatrix& mat) {
-  Image image(mat.cols(), mat.rows());
+cairo_status_t CairoWriteCallback(void* const closure,
+                                  const unsigned char* data,
+                                  const unsigned int length) {
+  if (static_cast<FileWriter*>(closure)->Write(
+          reinterpret_cast<const char*>(data), length)) {
+    return CAIRO_STATUS_SUCCESS;
+  }
+  return CAIRO_STATUS_WRITE_ERROR;
+}
+
+// Write 'mat' as a pleasing-to-look-at PNG into 'filename'
+void WritePng(const PixelDataMatrix& mat, FileWriter* const file_writer) {
+  const int stride =
+      cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, mat.cols());
+  CHECK_EQ(stride % 4, 0);
+  std::vector<uint32_t> pixels(stride / 4 * mat.rows(), 0.);
+
   float max = std::numeric_limits<float>::min();
   for (int y = 0; y < mat.rows(); ++y) {
     for (int x = 0; x < mat.cols(); ++x) {
@@ -65,7 +78,8 @@ Image IntoImage(const PixelDataMatrix& mat) {
     for (int x = 0; x < mat.cols(); ++x) {
       const PixelData& cell = mat(y, x);
       if (cell.num_occupied_cells_in_column == 0.) {
-        image.SetPixel(x, y, {{255, 255, 255}});
+        pixels[y * stride / 4 + x] =
+            (255 << 24) | (255 << 16) | (255 << 8) | 255;
         continue;
       }
 
@@ -74,13 +88,36 @@ Image IntoImage(const PixelDataMatrix& mat) {
       // details like chairs and tables are still well visible.
       const float saturation =
           std::log(cell.num_occupied_cells_in_column) / max;
-      const FloatColor color = {{Mix(1.f, cell.mean_r, saturation),
-                                 Mix(1.f, cell.mean_g, saturation),
-                                 Mix(1.f, cell.mean_b, saturation)}};
-      image.SetPixel(x, y, ToUint8Color(color));
+      double mean_r_in_column = (cell.mean_r / 255.);
+      double mean_g_in_column = (cell.mean_g / 255.);
+      double mean_b_in_column = (cell.mean_b / 255.);
+
+      double mix_r = Mix(1., mean_r_in_column, saturation);
+      double mix_g = Mix(1., mean_g_in_column, saturation);
+      double mix_b = Mix(1., mean_b_in_column, saturation);
+
+      const int r = common::RoundToInt(mix_r * 255.);
+      const int g = common::RoundToInt(mix_g * 255.);
+      const int b = common::RoundToInt(mix_b * 255.);
+      pixels[y * stride / 4 + x] = (255 << 24) | (r << 16) | (g << 8) | b;
     }
   }
-  return image;
+
+  // TODO(hrapp): cairo_image_surface_create_for_data does not take ownership of
+  // the data until the surface is finalized. Once it is finalized though,
+  // cairo_surface_write_to_png fails, complaining that the surface is already
+  // finalized. This makes it pretty hard to pass back ownership of the image to
+  // the caller.
+  cairo::UniqueSurfacePtr surface(
+      cairo_image_surface_create_for_data(
+          reinterpret_cast<unsigned char*>(pixels.data()), CAIRO_FORMAT_ARGB32,
+          mat.cols(), mat.rows(), stride),
+      cairo_surface_destroy);
+  CHECK_EQ(cairo_surface_status(surface.get()), CAIRO_STATUS_SUCCESS);
+  CHECK_EQ(cairo_surface_write_to_png_stream(surface.get(), &CairoWriteCallback,
+                                             file_writer),
+           CAIRO_STATUS_SUCCESS);
+  CHECK(file_writer->Close());
 }
 
 bool ContainedIn(const common::Time& time,
@@ -97,15 +134,10 @@ bool ContainedIn(const common::Time& time,
 
 XRayPointsProcessor::XRayPointsProcessor(
     const double voxel_size, const transform::Rigid3f& transform,
-    const std::vector<mapping::Floor>& floors,
-    const DrawTrajectories& draw_trajectories,
-    const std::string& output_filename,
-    const std::vector<mapping::proto::Trajectory>& trajectories,
+    const std::vector<mapping::Floor>& floors, const string& output_filename,
     FileWriterFactory file_writer_factory, PointsProcessor* const next)
-    : draw_trajectories_(draw_trajectories),
-      trajectories_(trajectories),
+    : next_(next),
       file_writer_factory_(file_writer_factory),
-      next_(next),
       floors_(floors),
       output_filename_(output_filename),
       transform_(transform) {
@@ -116,29 +148,21 @@ XRayPointsProcessor::XRayPointsProcessor(
 }
 
 std::unique_ptr<XRayPointsProcessor> XRayPointsProcessor::FromDictionary(
-    const std::vector<mapping::proto::Trajectory>& trajectories,
+    const mapping::proto::Trajectory& trajectory,
     FileWriterFactory file_writer_factory,
     common::LuaParameterDictionary* const dictionary,
     PointsProcessor* const next) {
   std::vector<mapping::Floor> floors;
-  const bool separate_floor = dictionary->HasKey("separate_floors") &&
-                              dictionary->GetBool("separate_floors");
-  const auto draw_trajectories = (!dictionary->HasKey("draw_trajectories") ||
-                                  dictionary->GetBool("draw_trajectories"))
-                                     ? DrawTrajectories::kYes
-                                     : DrawTrajectories::kNo;
-  if (separate_floor) {
-    CHECK_EQ(trajectories.size(), 1)
-        << "Can only detect floors with a single trajectory.";
-    floors = mapping::DetectFloors(trajectories.at(0));
+  if (dictionary->HasKey("separate_floors") &&
+      dictionary->GetBool("separate_floors")) {
+    floors = mapping::DetectFloors(trajectory);
   }
 
   return common::make_unique<XRayPointsProcessor>(
       dictionary->GetDouble("voxel_size"),
       transform::FromDictionary(dictionary->GetDictionary("transform").get())
           .cast<float>(),
-      floors, draw_trajectories, dictionary->GetString("filename"),
-      trajectories, file_writer_factory, next);
+      floors, dictionary->GetString("filename"), file_writer_factory, next);
 }
 
 void XRayPointsProcessor::WriteVoxels(const Aggregation& aggregation,
@@ -159,12 +183,12 @@ void XRayPointsProcessor::WriteVoxels(const Aggregation& aggregation,
   // For the screen we are using. X: right, Y: up
   const int xsize = bounding_box_.sizes()[1] + 1;
   const int ysize = bounding_box_.sizes()[2] + 1;
-  PixelDataMatrix pixel_data_matrix = PixelDataMatrix(ysize, xsize);
+  PixelDataMatrix image = PixelDataMatrix(ysize, xsize);
   for (mapping_3d::HybridGridBase<bool>::Iterator it(aggregation.voxels);
        !it.Done(); it.Next()) {
     const Eigen::Array3i cell_index = it.GetCellIndex();
     const Eigen::Array2i pixel = voxel_index_to_pixel(cell_index);
-    PixelData& pixel_data = pixel_data_matrix(pixel.y(), pixel.x());
+    PixelData& pixel_data = image(pixel.y(), pixel.x());
     const auto& column_data = aggregation.column_data.at(
         std::make_pair(cell_index[1], cell_index[2]));
     pixel_data.mean_r = column_data.sum_r / column_data.count;
@@ -172,30 +196,15 @@ void XRayPointsProcessor::WriteVoxels(const Aggregation& aggregation,
     pixel_data.mean_b = column_data.sum_b / column_data.count;
     ++pixel_data.num_occupied_cells_in_column;
   }
-
-  Image image = IntoImage(pixel_data_matrix);
-  if (draw_trajectories_ == DrawTrajectories::kYes) {
-    for (size_t i = 0; i < trajectories_.size(); ++i) {
-      DrawTrajectory(
-          trajectories_[i], GetColor(i),
-          [&voxel_index_to_pixel, &aggregation,
-           this](const transform::Rigid3d& pose) -> Eigen::Array2i {
-            return voxel_index_to_pixel(aggregation.voxels.GetCellIndex(
-                (transform_ * pose.cast<float>()).translation()));
-          },
-          image.GetCairoSurface().get());
-    }
-  }
-
-  image.WritePng(file_writer);
-  CHECK(file_writer->Close());
+  WritePng(image, file_writer);
 }
 
 void XRayPointsProcessor::Insert(const PointsBatch& batch,
+                                 const transform::Rigid3f& transform,
                                  Aggregation* const aggregation) {
-  constexpr FloatColor kDefaultColor = {{0.f, 0.f, 0.f}};
+  constexpr Color kDefaultColor = {{0, 0, 0}};
   for (size_t i = 0; i < batch.points.size(); ++i) {
-    const Eigen::Vector3f camera_point = transform_ * batch.points[i];
+    const Eigen::Vector3f camera_point = transform * batch.points[i];
     const Eigen::Array3i cell_index =
         aggregation->voxels.GetCellIndex(camera_point);
     *aggregation->voxels.mutable_value(cell_index) = true;
@@ -214,13 +223,13 @@ void XRayPointsProcessor::Insert(const PointsBatch& batch,
 void XRayPointsProcessor::Process(std::unique_ptr<PointsBatch> batch) {
   if (floors_.empty()) {
     CHECK_EQ(aggregations_.size(), 1);
-    Insert(*batch, &aggregations_[0]);
+    Insert(*batch, transform_, &aggregations_[0]);
   } else {
     for (size_t i = 0; i < floors_.size(); ++i) {
-      if (!ContainedIn(batch->start_time, floors_[i].timespans)) {
+      if (!ContainedIn(batch->time, floors_[i].timespans)) {
         continue;
       }
-      Insert(*batch, &aggregations_[i]);
+      Insert(*batch, transform_, &aggregations_[i]);
     }
   }
   next_->Process(std::move(batch));

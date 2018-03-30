@@ -41,18 +41,18 @@ OutlierRemovingPointsProcessor::OutlierRemovingPointsProcessor(
 }
 
 void OutlierRemovingPointsProcessor::Process(
-    std::unique_ptr<PointsBatch> batch) {
+    std::unique_ptr<PointsBatch> points) {
   switch (state_) {
     case State::kPhase1:
-      ProcessInPhaseOne(*batch);
+      ProcessInPhaseOne(*points);
       break;
 
     case State::kPhase2:
-      ProcessInPhaseTwo(*batch);
+      ProcessInPhaseTwo(*points);
       break;
 
     case State::kPhase3:
-      ProcessInPhaseThree(std::move(batch));
+      ProcessInPhaseThree(std::move(points));
       break;
   }
 }
@@ -106,11 +106,11 @@ void OutlierRemovingPointsProcessor::ProcessInPhaseTwo(
 void OutlierRemovingPointsProcessor::ProcessInPhaseThree(
     std::unique_ptr<PointsBatch> batch) {
   constexpr double kMissPerHitLimit = 3;
-  std::unordered_set<int> to_remove;
+  std::vector<int> to_remove;
   for (size_t i = 0; i < batch->points.size(); ++i) {
     const auto voxel = voxels_.value(voxels_.GetCellIndex(batch->points[i]));
     if (!(voxel.rays < kMissPerHitLimit * voxel.hits)) {
-      to_remove.insert(i);
+      to_remove.push_back(i);
     }
   }
   RemovePoints(to_remove, batch.get());
