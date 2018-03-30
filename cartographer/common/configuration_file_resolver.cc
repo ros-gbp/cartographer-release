@@ -27,15 +27,14 @@ namespace cartographer {
 namespace common {
 
 ConfigurationFileResolver::ConfigurationFileResolver(
-    const std::vector<std::string>& configuration_files_directories)
+    const std::vector<string>& configuration_files_directories)
     : configuration_files_directories_(configuration_files_directories) {
   configuration_files_directories_.push_back(kConfigurationFilesDirectory);
 }
 
-std::string ConfigurationFileResolver::GetFullPathOrDie(
-    const std::string& basename) {
+string ConfigurationFileResolver::GetFullPathOrDie(const string& basename) {
   for (const auto& path : configuration_files_directories_) {
-    const std::string filename = path + "/" + basename;
+    const string filename = path + "/" + basename;
     std::ifstream stream(filename.c_str());
     if (stream.good()) {
       LOG(INFO) << "Found '" << filename << "' for '" << basename << "'.";
@@ -45,12 +44,11 @@ std::string ConfigurationFileResolver::GetFullPathOrDie(
   LOG(FATAL) << "File '" << basename << "' was not found.";
 }
 
-std::string ConfigurationFileResolver::GetFileContentOrDie(
-    const std::string& basename) {
-  const std::string filename = GetFullPathOrDie(basename);
+string ConfigurationFileResolver::GetFileContentOrDie(const string& basename) {
+  const string filename = GetFullPathOrDie(basename);
   std::ifstream stream(filename.c_str());
-  return std::string((std::istreambuf_iterator<char>(stream)),
-                     std::istreambuf_iterator<char>());
+  return string((std::istreambuf_iterator<char>(stream)),
+                std::istreambuf_iterator<char>());
 }
 
 }  // namespace common

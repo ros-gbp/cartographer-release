@@ -17,10 +17,10 @@
 #ifndef CARTOGRAPHER_MAPPING_2D_RAY_CASTING_H_
 #define CARTOGRAPHER_MAPPING_2D_RAY_CASTING_H_
 
-#include <vector>
+#include <functional>
 
-#include "cartographer/common/port.h"
-#include "cartographer/mapping_2d/probability_grid.h"
+#include "cartographer/mapping_2d/map_limits.h"
+#include "cartographer/mapping_2d/xy_index.h"
 #include "cartographer/sensor/point_cloud.h"
 #include "cartographer/sensor/range_data.h"
 #include "cartographer/transform/transform.h"
@@ -28,12 +28,11 @@
 namespace cartographer {
 namespace mapping_2d {
 
-// For each ray in 'range_data', inserts hits and misses into
-// 'probability_grid'. Hits are handled before misses.
-void CastRays(const sensor::RangeData& range_data,
-              const std::vector<uint16>& hit_table,
-              const std::vector<uint16>& miss_table, bool insert_free_space,
-              ProbabilityGrid* probability_grid);
+// For each ray in 'range_data', calls 'hit_visitor' and 'miss_visitor' on the
+// appropriate cells. Hits are handled before misses.
+void CastRays(const sensor::RangeData& range_data, const MapLimits& limits,
+              const std::function<void(const Eigen::Array2i&)>& hit_visitor,
+              const std::function<void(const Eigen::Array2i&)>& miss_visitor);
 
 }  // namespace mapping_2d
 }  // namespace cartographer
