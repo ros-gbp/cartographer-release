@@ -38,11 +38,11 @@ MinMaxRangeFiteringPointsProcessor::MinMaxRangeFiteringPointsProcessor(
 
 void MinMaxRangeFiteringPointsProcessor::Process(
     std::unique_ptr<PointsBatch> batch) {
-  std::unordered_set<int> to_remove;
+  std::vector<int> to_remove;
   for (size_t i = 0; i < batch->points.size(); ++i) {
     const float range = (batch->points[i] - batch->origin).norm();
     if (!(min_range_ <= range && range <= max_range_)) {
-      to_remove.insert(i);
+      to_remove.push_back(i);
     }
   }
   RemovePoints(to_remove, batch.get());

@@ -72,7 +72,7 @@ macro(google_initialize_cartographer_project)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
         ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
   endif()
-  set(GOOG_CXX_FLAGS "-pthread -std=c++11 -fPIC ${GOOG_CXX_FLAGS}")
+  set(GOOG_CXX_FLAGS "-pthread -std=c++11 ${GOOG_CXX_FLAGS}")
 
   google_add_flag(GOOG_CXX_FLAGS "-Wall")
   google_add_flag(GOOG_CXX_FLAGS "-Wpedantic")
@@ -131,12 +131,4 @@ endmacro()
 macro(google_enable_testing)
   enable_testing()
   find_package(GMock REQUIRED)
-endmacro()
-
-macro(list_remove_item REMOVE_FROM TO_REMOVE)
-  if(${TO_REMOVE})
-    list(REMOVE_ITEM ${REMOVE_FROM} ${${TO_REMOVE}})
-    message(WARNING "Unnecessary use of list_remove_item. Consider using "
-      "list(REMOVE_ITEM ${REMOVE_FROM} \${${TO_REMOVE}}.")
-  endif()
 endmacro()
