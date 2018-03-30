@@ -23,12 +23,15 @@
     and mapping (SLAM) in 2D and 3D across multiple platforms and sensor
     configurations.
   </description>
-  <maintainer email="google-cartographer@googlegroups.com">
-    The Cartographer Authors
+  <maintainer email="cartographer-owners@googlegroups.com">
+    The Cartographer Owners
   </maintainer>
+  <maintainer email="kei.okada@gmail.com">Kei Okada</maintainer>
+  <maintainer email="ryosuke.tajima@opensource-robotics.tokyo.jp">Ryosuke Tajima</maintainer>
   <license>Apache 2.0</license>
 
   <url>https://github.com/googlecartographer/cartographer</url>
+  <author>The Cartographer Authors</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -37,9 +40,9 @@
   <build_depend>python-sphinx</build_depend>
 
   <depend>boost</depend>
-  <depend>ceres-solver</depend>
   <depend>eigen</depend>
   <depend>libcairo2-dev</depend>
+  <depend>libceres-dev</depend>
   <depend>libgflags-dev</depend>
   <depend>libgoogle-glog-dev</depend>
   <depend>libwebp-dev</depend>
