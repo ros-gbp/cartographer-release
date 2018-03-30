@@ -28,7 +28,7 @@ HybridGridPointsProcessor::HybridGridPointsProcessor(
 
 std::unique_ptr<HybridGridPointsProcessor>
 HybridGridPointsProcessor::FromDictionary(
-    const FileWriterFactory& file_writer_factory,
+    FileWriterFactory file_writer_factory,
     common::LuaParameterDictionary* const dictionary,
     PointsProcessor* const next) {
   return common::make_unique<HybridGridPointsProcessor>(
@@ -46,8 +46,8 @@ void HybridGridPointsProcessor::Process(std::unique_ptr<PointsBatch> batch) {
 
 PointsProcessor::FlushResult HybridGridPointsProcessor::Flush() {
   const mapping_3d::proto::HybridGrid hybrid_grid_proto =
-      hybrid_grid_.ToProto();
-  std::string serialized;
+      mapping_3d::ToProto(hybrid_grid_);
+  string serialized;
   hybrid_grid_proto.SerializeToString(&serialized);
   file_writer_->Write(serialized.data(), serialized.size());
   CHECK(file_writer_->Close());
@@ -61,9 +61,6 @@ PointsProcessor::FlushResult HybridGridPointsProcessor::Flush() {
       return FlushResult::kFinished;
   }
   LOG(FATAL) << "Failed to receive FlushResult::kFinished";
-  // The following unreachable return statement is needed to avoid a GCC bug
-  // described at https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81508
-  return FlushResult::kFinished;
 }
 
 }  // namespace io
