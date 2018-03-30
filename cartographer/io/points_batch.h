@@ -19,26 +19,27 @@
 
 #include <array>
 #include <cstdint>
-#include <unordered_set>
 #include <vector>
 
 #include "Eigen/Core"
 #include "cartographer/common/time.h"
-#include "cartographer/io/color.h"
 
 namespace cartographer {
 namespace io {
+
+// A point's color.
+using Color = std::array<uint8_t, 3>;
 
 // A number of points, captured around the same 'time' and by a
 // sensor at the same 'origin'.
 struct PointsBatch {
   PointsBatch() {
     origin = Eigen::Vector3f::Zero();
-    trajectory_id = 0;
+    trajectory_index = 0;
   }
 
-  // Time at which the first point of this batch has been acquired.
-  common::Time start_time;
+  // Time at which this batch has been acquired.
+  common::Time time;
 
   // Origin of the data, i.e. the location of the sensor in the world at
   // 'time'.
@@ -46,12 +47,12 @@ struct PointsBatch {
 
   // Sensor that generated this data's 'frame_id' or empty if this information
   // is unknown.
-  std::string frame_id;
+  string frame_id;
 
-  // Trajectory ID that produced this point.
-  int trajectory_id;
+  // Trajectory index that produced this point.
+  int trajectory_index;
 
-  // Geometry of the points in the map frame.
+  // Geometry of the points in a metric frame.
   std::vector<Eigen::Vector3f> points;
 
   // Intensities are optional and may be unspecified. The meaning of these
@@ -62,11 +63,11 @@ struct PointsBatch {
   std::vector<float> intensities;
 
   // Colors are optional. If set, they are RGB values.
-  std::vector<FloatColor> colors;
+  std::vector<Color> colors;
 };
 
 // Removes the indices in 'to_remove' from 'batch'.
-void RemovePoints(std::unordered_set<int> to_remove, PointsBatch* batch);
+void RemovePoints(std::vector<int> to_remove, PointsBatch* batch);
 
 }  // namespace io
 }  // namespace cartographer
