@@ -35,18 +35,18 @@ class CeresPose {
       std::unique_ptr<ceres::LocalParameterization> rotation_parametrization,
       ceres::Problem* problem);
 
+  CeresPose(const CeresPose&) = delete;
+  CeresPose& operator=(const CeresPose&) = delete;
+
   const transform::Rigid3d ToRigid() const;
 
-  double* translation() { return data_->translation.data(); }
-  double* rotation() { return data_->rotation.data(); }
+  double* translation() { return translation_.data(); }
+  double* rotation() { return rotation_.data(); }
 
  private:
-  struct Data {
-    std::array<double, 3> translation;
-    // Rotation quaternion as (w, x, y, z).
-    std::array<double, 4> rotation;
-  };
-  std::shared_ptr<Data> data_;
+  std::array<double, 3> translation_;
+  // Rotation quaternion as (w, x, y, z).
+  std::array<double, 4> rotation_;
 };
 
 }  // namespace mapping_3d

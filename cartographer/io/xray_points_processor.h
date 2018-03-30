@@ -36,17 +36,14 @@ class XRayPointsProcessor : public PointsProcessor {
  public:
   constexpr static const char* kConfigurationFileActionName =
       "write_xray_image";
-  enum class DrawTrajectories { kNo, kYes };
-  XRayPointsProcessor(
-      double voxel_size, const transform::Rigid3f& transform,
-      const std::vector<mapping::Floor>& floors,
-      const DrawTrajectories& draw_trajectories,
-      const std::string& output_filename,
-      const std::vector<mapping::proto::Trajectory>& trajectories,
-      FileWriterFactory file_writer_factory, PointsProcessor* next);
+  XRayPointsProcessor(double voxel_size, const transform::Rigid3f& transform,
+                      const std::vector<mapping::Floor>& floors,
+                      const string& output_filename,
+                      FileWriterFactory file_writer_factory,
+                      PointsProcessor* next);
 
   static std::unique_ptr<XRayPointsProcessor> FromDictionary(
-      const std::vector<mapping::proto::Trajectory>& trajectories,
+      const mapping::proto::Trajectory& trajectory,
       FileWriterFactory file_writer_factory,
       common::LuaParameterDictionary* dictionary, PointsProcessor* next);
 
@@ -59,9 +56,9 @@ class XRayPointsProcessor : public PointsProcessor {
 
  private:
   struct ColumnData {
-    float sum_r = 0.;
-    float sum_g = 0.;
-    float sum_b = 0.;
+    double sum_r = 0.;
+    double sum_g = 0.;
+    double sum_b = 0.;
     uint32_t count = 0;
   };
 
@@ -72,17 +69,16 @@ class XRayPointsProcessor : public PointsProcessor {
 
   void WriteVoxels(const Aggregation& aggregation,
                    FileWriter* const file_writer);
-  void Insert(const PointsBatch& batch, Aggregation* aggregation);
+  void Insert(const PointsBatch& batch, const transform::Rigid3f& transform,
+              Aggregation* aggregation);
 
-  const DrawTrajectories draw_trajectories_;
-  const std::vector<mapping::proto::Trajectory> trajectories_;
-  FileWriterFactory file_writer_factory_;
   PointsProcessor* const next_;
+  FileWriterFactory file_writer_factory_;
 
   // If empty, we do not separate into floors.
   std::vector<mapping::Floor> floors_;
 
-  const std::string output_filename_;
+  const string output_filename_;
   const transform::Rigid3f transform_;
 
   // Only has one entry if we do not separate into floors.
