@@ -99,15 +99,6 @@ google_binary(cartographer_compute_relations_metrics
     cartographer/ground_truth/compute_relations_metrics_main.cc
 )
 
-foreach(ABS_FIL ${ALL_TESTS})
-  file(RELATIVE_PATH REL_FIL ${PROJECT_SOURCE_DIR} ${ABS_FIL})
-  get_filename_component(DIR ${REL_FIL} DIRECTORY)
-  get_filename_component(FIL_WE ${REL_FIL} NAME_WE)
-  # Replace slashes as required for CMP0037.
-  string(REPLACE "/" "." TEST_TARGET_NAME "${DIR}/${FIL_WE}")
-  google_test("${TEST_TARGET_NAME}" ${ABS_FIL})
-endforeach()
-
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
   "${EIGEN3_INCLUDE_DIR}")
 target_link_libraries(${PROJECT_NAME} PUBLIC ${EIGEN3_LIBRARIES})
@@ -148,10 +139,20 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+foreach(ABS_FIL ${ALL_TESTS})
+  file(RELATIVE_PATH REL_FIL ${PROJECT_SOURCE_DIR} ${ABS_FIL})
+  get_filename_component(DIR ${REL_FIL} DIRECTORY)
+  get_filename_component(FIL_WE ${REL_FIL} NAME_WE)
+  # Replace slashes as required for CMP0037.
+  string(REPLACE "/" "." TEST_TARGET_NAME "${DIR}/${FIL_WE}")
+  message("${TEST_TARGET_NAME}")
+  google_test("${TEST_TARGET_NAME}" ${ABS_FIL})
+endforeach()
 # TODO(damonkohler): Create a testing library.
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
-  "${GMOCK_INCLUDE_DIRS}")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GMOCK_LIBRARY})
+# target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+#   "${GMOCK_INCLUDE_DIRS}")
+# target_link_libraries(${PROJECT_NAME} PUBLIC ${GMOCK_LIBRARY})
+
 
 set(TARGET_COMPILE_FLAGS "${TARGET_COMPILE_FLAGS} ${GOOG_CXX_FLAGS}")
 set_target_properties(${PROJECT_NAME} PROPERTIES
