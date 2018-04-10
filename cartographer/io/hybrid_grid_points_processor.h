@@ -33,7 +33,7 @@ class HybridGridPointsProcessor : public PointsProcessor {
       delete;
 
   static std::unique_ptr<HybridGridPointsProcessor> FromDictionary(
-      const FileWriterFactory& file_writer_factory,
+      FileWriterFactory file_writer_factory,
       common::LuaParameterDictionary* dictionary, PointsProcessor* next);
 
   ~HybridGridPointsProcessor() override {}
