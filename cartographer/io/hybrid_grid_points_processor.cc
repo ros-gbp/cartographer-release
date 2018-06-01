@@ -8,8 +8,8 @@
 #include "cartographer/io/file_writer.h"
 #include "cartographer/io/points_batch.h"
 #include "cartographer/io/points_processor.h"
-#include "cartographer/mapping_3d/hybrid_grid.h"
-#include "cartographer/mapping_3d/range_data_inserter.h"
+#include "cartographer/mapping/3d/hybrid_grid.h"
+#include "cartographer/mapping/3d/range_data_inserter_3d.h"
 #include "cartographer/sensor/range_data.h"
 #include "glog/logging.h"
 
@@ -18,7 +18,7 @@ namespace io {
 
 HybridGridPointsProcessor::HybridGridPointsProcessor(
     const double voxel_size,
-    const mapping_3d::proto::RangeDataInserterOptions&
+    const mapping::proto::RangeDataInserterOptions3D&
         range_data_inserter_options,
     std::unique_ptr<FileWriter> file_writer, PointsProcessor* const next)
     : next_(next),
@@ -28,12 +28,12 @@ HybridGridPointsProcessor::HybridGridPointsProcessor(
 
 std::unique_ptr<HybridGridPointsProcessor>
 HybridGridPointsProcessor::FromDictionary(
-    FileWriterFactory file_writer_factory,
+    const FileWriterFactory& file_writer_factory,
     common::LuaParameterDictionary* const dictionary,
     PointsProcessor* const next) {
   return common::make_unique<HybridGridPointsProcessor>(
       dictionary->GetDouble("voxel_size"),
-      mapping_3d::CreateRangeDataInserterOptions(
+      mapping::CreateRangeDataInserterOptions3D(
           dictionary->GetDictionary("range_data_inserter").get()),
       file_writer_factory(dictionary->GetString("filename")), next);
 }
@@ -45,9 +45,8 @@ void HybridGridPointsProcessor::Process(std::unique_ptr<PointsBatch> batch) {
 }
 
 PointsProcessor::FlushResult HybridGridPointsProcessor::Flush() {
-  const mapping_3d::proto::HybridGrid hybrid_grid_proto =
-      mapping_3d::ToProto(hybrid_grid_);
-  string serialized;
+  const mapping::proto::HybridGrid hybrid_grid_proto = hybrid_grid_.ToProto();
+  std::string serialized;
   hybrid_grid_proto.SerializeToString(&serialized);
   file_writer_->Write(serialized.data(), serialized.size());
   CHECK(file_writer_->Close());
@@ -61,6 +60,9 @@ PointsProcessor::FlushResult HybridGridPointsProcessor::Flush() {
       return FlushResult::kFinished;
   }
   LOG(FATAL) << "Failed to receive FlushResult::kFinished";
+  // The following unreachable return statement is needed to avoid a GCC bug
+  // described at https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81508
+  return FlushResult::kFinished;
 }
 
 }  // namespace io

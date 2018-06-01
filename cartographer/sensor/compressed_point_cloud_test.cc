@@ -41,7 +41,7 @@ constexpr float kPrecision = 0.001f;
 
 // Matcher for 3-d vectors w.r.t. to the target precision.
 MATCHER_P(ApproximatelyEquals, expected,
-          string("is equal to ") + PrintToString(expected)) {
+          std::string("is equal to ") + PrintToString(expected)) {
   return (arg - expected).isZero(kPrecision);
 }
 
@@ -106,7 +106,7 @@ TEST(CompressPointCloudTest, CompressesNoGaps) {
   EXPECT_EQ(decompressed.size(), recompressed.size());
 
   std::vector<float> x_coord;
-  for (const auto& p : compressed) {
+  for (const Eigen::Vector3f& p : compressed) {
     x_coord.push_back(p[0]);
   }
   std::sort(x_coord.begin(), x_coord.end());

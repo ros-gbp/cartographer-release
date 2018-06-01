@@ -25,11 +25,11 @@ namespace io {
 class PlyWritingPointsProcessor : public PointsProcessor {
  public:
   constexpr static const char* kConfigurationFileActionName = "write_ply";
-  PlyWritingPointsProcessor(std::unique_ptr<FileWriter> file,
+  PlyWritingPointsProcessor(std::unique_ptr<FileWriter> file_writer,
                             PointsProcessor* next);
 
   static std::unique_ptr<PlyWritingPointsProcessor> FromDictionary(
-      FileWriterFactory file_writer_factory,
+      const FileWriterFactory& file_writer_factory,
       common::LuaParameterDictionary* dictionary, PointsProcessor* next);
 
   ~PlyWritingPointsProcessor() override {}
@@ -46,6 +46,7 @@ class PlyWritingPointsProcessor : public PointsProcessor {
 
   int64 num_points_;
   bool has_colors_;
+  bool has_intensities_;
   std::unique_ptr<FileWriter> file_;
 };
 

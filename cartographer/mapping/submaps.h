@@ -25,9 +25,9 @@
 #include "cartographer/common/port.h"
 #include "cartographer/mapping/id.h"
 #include "cartographer/mapping/probability_values.h"
+#include "cartographer/mapping/proto/serialization.pb.h"
 #include "cartographer/mapping/proto/submap_visualization.pb.h"
 #include "cartographer/mapping/trajectory_node.h"
-#include "cartographer/mapping_2d/probability_grid.h"
 #include "glog/logging.h"
 
 namespace cartographer {
@@ -52,76 +52,42 @@ inline uint8 ProbabilityToLogOddsInteger(const float probability) {
   return value;
 }
 
-// An individual submap, which has a 'local_pose' in the local SLAM frame, keeps
+// An individual submap, which has a 'local_pose' in the local map frame, keeps
 // track of how many range data were inserted into it, and sets the
 // 'finished_probability_grid' to be used for loop closing once the map no
 // longer changes.
 class Submap {
  public:
-  Submap(const transform::Rigid3d& local_pose) : local_pose_(local_pose) {}
+  Submap(const transform::Rigid3d& local_submap_pose)
+      : local_pose_(local_submap_pose) {}
   virtual ~Submap() {}
 
-  // Local SLAM pose of this submap.
-  transform::Rigid3d local_pose() const { return local_pose_; }
-
-  // Number of RangeData inserted.
-  size_t num_range_data() const { return num_range_data_; }
-
-  // The 'finished_probability_grid' when this submap is finished and will not
-  // change anymore. Otherwise, this is nullptr and the next call to
-  // InsertRangeData() will change the submap.
-  const mapping_2d::ProbabilityGrid* finished_probability_grid() const {
-    return finished_probability_grid_;
-  }
+  virtual void ToProto(proto::Submap* proto,
+                       bool include_probability_grid_data) const = 0;
+  virtual void UpdateFromProto(const proto::Submap& proto) = 0;
 
   // Fills data into the 'response'.
   virtual void ToResponseProto(
       const transform::Rigid3d& global_submap_pose,
       proto::SubmapQuery::Response* response) const = 0;
 
+  // Pose of this submap in the local map frame.
+  transform::Rigid3d local_pose() const { return local_pose_; }
+
+  // Number of RangeData inserted.
+  int num_range_data() const { return num_range_data_; }
+  void set_num_range_data(const int num_range_data) {
+    num_range_data_ = num_range_data;
+  }
+
+  // Whether the submap is finished or not.
+  bool finished() const { return finished_; }
+  void set_finished(bool finished) { finished_ = finished; }
+
  private:
   const transform::Rigid3d local_pose_;
-
- protected:
-  // TODO(hrapp): All of this should be private.
   int num_range_data_ = 0;
-  const mapping_2d::ProbabilityGrid* finished_probability_grid_ = nullptr;
-};
-
-// Submaps is a sequence of maps to which scans are matched and into which scans
-// are inserted.
-//
-// Except during initialization when only a single submap exists, there are
-// always two submaps into which scans are inserted: an old submap that is used
-// for matching, and a new one, which will be used for matching next, that is
-// being initialized.
-//
-// Once a certain number of scans have been inserted, the new submap is
-// considered initialized: the old submap is no longer changed, the "new" submap
-// is now the "old" submap and is used for scan-to-map matching. Moreover,
-// a "new" submap gets inserted.
-class Submaps {
- public:
-  Submaps();
-  virtual ~Submaps();
-
-  Submaps(const Submaps&) = delete;
-  Submaps& operator=(const Submaps&) = delete;
-
-  // Returns the index of the newest initialized Submap which can be
-  // used for scan-to-map matching.
-  int matching_index() const;
-
-  // Returns the indices of the Submap into which point clouds will
-  // be inserted.
-  std::vector<int> insertion_indices() const;
-
-  // Returns the Submap with the given 'index'. The same 'index' will always
-  // return the same pointer, so that Submaps can be identified by it.
-  virtual const Submap* Get(int index) const = 0;
-
-  // Returns the number of Submaps.
-  virtual int size() const = 0;
+  bool finished_ = false;
 };
 
 }  // namespace mapping

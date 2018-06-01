@@ -30,25 +30,43 @@ configurations.
 .. _Cartographer: https://github.com/googlecartographer/cartographer
 .. _SLAM: https://en.wikipedia.org/wiki/Simultaneous_localization_and_mapping
 
-Open house
-==========
-
-We regularly meet in an open-for-all Google hangout to discuss progress and plans for Cartographer.
-
-The next Cartographer Open House Hangout is on Thursday, June 22, 5pm CEST (8am PST) [`Hangouts link`_].
-
-.. _Hangouts link: https://staging.talkgadget.google.com/hangouts/_/google.com/cartographeropenhouse
-
-- June 8, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170608/slides.pdf>`_
-
 Getting started
 ===============
 
 * Learn to use Cartographer at `our Read the Docs site`_.
-* Please join the `mailing list`_ and ask questions.
+* You can ask a question by `creating an issue`_.
 
 .. _our Read the Docs site: https://google-cartographer.readthedocs.io
+.. _creating an issue: https://github.com/googlecartographer/cartographer_ros/issues/new?labels=question
+
+Open house
+==========
+
+We regularly meet in an open-for-all Google hangout to discuss progress and plans for Cartographer.
+You can join the `mailing list`_ to receive announcements.
+
+The next Cartographer Open House Hangout is on **Thursday, May 24, 5pm CEST (8am PT)** [`Hangouts link`_].
+
 .. _mailing list: https://groups.google.com/forum/#!forum/google-cartographer
+.. _Hangouts link: https://staging.talkgadget.google.com/hangouts/_/google.com/cartographeropenhouse
+
+- May 3, 2018: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/180503/slides.pdf>`_
+- March 29, 2018: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/180329/slides.pdf>`_
+- February 22, 2018: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/180222/slides.pdf>`_
+- February 8, 2018: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/180208/slides.pdf>`_
+- January 18, 2018: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/180125/slides.pdf>`_
+- January 11, 2018: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/180111/slides.pdf>`_
+- December 7, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/171207/slides.pdf>`_
+- November 23, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/171123/slides.pdf>`_
+- November 9, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/171109/slides.pdf>`_
+- October 26, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/171026/slides.pdf>`_
+- October 12, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/171012/slides.pdf>`_
+- September 14, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170914/slides.pdf>`_
+- August 17, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170817/slides.pdf>`_
+- July 20, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170720/slides.pdf>`_
+- July 6, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170706/slides.pdf>`_
+- June 22, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170622/sildes.pdf>`_
+- June 8, 2017: `Slides <https://storage.googleapis.com/cartographer-public-data/cartographer-open-house/170608/slides.pdf>`_
 
 Contributing
 ============

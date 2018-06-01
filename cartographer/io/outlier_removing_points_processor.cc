@@ -41,18 +41,18 @@ OutlierRemovingPointsProcessor::OutlierRemovingPointsProcessor(
 }
 
 void OutlierRemovingPointsProcessor::Process(
-    std::unique_ptr<PointsBatch> points) {
+    std::unique_ptr<PointsBatch> batch) {
   switch (state_) {
     case State::kPhase1:
-      ProcessInPhaseOne(*points);
+      ProcessInPhaseOne(*batch);
       break;
 
     case State::kPhase2:
-      ProcessInPhaseTwo(*points);
+      ProcessInPhaseTwo(*batch);
       break;
 
     case State::kPhase3:
-      ProcessInPhaseThree(std::move(points));
+      ProcessInPhaseThree(std::move(batch));
       break;
   }
 }
@@ -94,7 +94,7 @@ void OutlierRemovingPointsProcessor::ProcessInPhaseTwo(
     const Eigen::Vector3f delta = batch.points[i] - batch.origin;
     const float length = delta.norm();
     for (float x = 0; x < length; x += voxel_size_) {
-      const auto index =
+      const Eigen::Array3i index =
           voxels_.GetCellIndex(batch.origin + (x / length) * delta);
       if (voxels_.value(index).hits > 0) {
         ++voxels_.mutable_value(index)->rays;
@@ -106,11 +106,12 @@ void OutlierRemovingPointsProcessor::ProcessInPhaseTwo(
 void OutlierRemovingPointsProcessor::ProcessInPhaseThree(
     std::unique_ptr<PointsBatch> batch) {
   constexpr double kMissPerHitLimit = 3;
-  std::vector<int> to_remove;
+  std::unordered_set<int> to_remove;
   for (size_t i = 0; i < batch->points.size(); ++i) {
-    const auto voxel = voxels_.value(voxels_.GetCellIndex(batch->points[i]));
+    const VoxelData voxel =
+        voxels_.value(voxels_.GetCellIndex(batch->points[i]));
     if (!(voxel.rays < kMissPerHitLimit * voxel.hits)) {
-      to_remove.push_back(i);
+      to_remove.insert(i);
     }
   }
   RemovePoints(to_remove, batch.get());

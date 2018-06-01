@@ -20,6 +20,8 @@
 #include <fstream>
 
 #include "cartographer/common/port.h"
+#include "cartographer/io/proto_stream_interface.h"
+#include "google/protobuf/message.h"
 
 namespace cartographer {
 namespace io {
@@ -30,49 +32,37 @@ namespace io {
 //
 // TODO(whess): Compress the file instead of individual messages for better
 // compression performance? Should we use LZ4?
-class ProtoStreamWriter {
+class ProtoStreamWriter : public ProtoStreamWriterInterface {
  public:
-  ProtoStreamWriter(const string& filename);
-  ~ProtoStreamWriter();
+  ProtoStreamWriter(const std::string& filename);
+  ~ProtoStreamWriter() = default;
 
   ProtoStreamWriter(const ProtoStreamWriter&) = delete;
   ProtoStreamWriter& operator=(const ProtoStreamWriter&) = delete;
 
-  // Serializes, compressed and writes the 'proto' to the file.
-  template <typename MessageType>
-  void WriteProto(const MessageType& proto) {
-    string uncompressed_data;
-    proto.SerializeToString(&uncompressed_data);
-    Write(uncompressed_data);
-  }
-
-  // This should be called to check whether writing was successful.
-  bool Close();
+  void WriteProto(const google::protobuf::Message& proto) override;
+  bool Close() override;
 
  private:
-  void Write(const string& uncompressed_data);
+  void Write(const std::string& uncompressed_data);
 
   std::ofstream out_;
 };
 
 // A reader of the format produced by ProtoStreamWriter.
-class ProtoStreamReader {
+class ProtoStreamReader : public ProtoStreamReaderInterface {
  public:
-  ProtoStreamReader(const string& filename);
-  ~ProtoStreamReader();
+  explicit ProtoStreamReader(const std::string& filename);
+  ~ProtoStreamReader() = default;
 
   ProtoStreamReader(const ProtoStreamReader&) = delete;
   ProtoStreamReader& operator=(const ProtoStreamReader&) = delete;
 
-  template <typename MessageType>
-  bool ReadProto(MessageType* proto) {
-    string decompressed_data;
-    return Read(&decompressed_data) &&
-           proto->ParseFromString(decompressed_data);
-  }
+  bool ReadProto(google::protobuf::Message* proto) override;
+  bool eof() const override;
 
  private:
-  bool Read(string* decompressed_data);
+  bool Read(std::string* decompressed_data);
 
   std::ifstream in_;
 };
